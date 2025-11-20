@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PlayBet Arena — Simulator (Play Money)</title>
+  <style>
+    :root{
+      --bg:#0f1724;           /* very dark blue */
+      --card:#0b1220;         /* slightly lighter */
+      --accent:#3aa7ff;       /* bright blue */
+      --accent-2:#67d1ff;     /* lighter blue */
+      --muted:#9fb6d6;
+      --glass: rgba(255,255,255,0.03);
+      --success: #7ef3a6;
+      --danger: #ff7a7a;
+      --radius:12px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Helvetica Neue", monospace;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: radial-gradient(1200px 700px at 10% 20%, rgba(58,167,255,0.06), transparent),
+                  radial-gradient(900px 500px at 90% 80%, rgba(103,209,255,0.03), transparent),
+                  var(--bg);
+      color: #e6f2ff;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      padding:28px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .wrap{
+      width:100%;
+      max-width:980px;
+      margin:0 16px;
+    }
+
+    header.app-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:18px;
+    }
+
+    .brand{
+      display:flex;
+      gap:12px;
+      align-items:center;
+    }
+
+    .logo {
+      width:56px; height:56px;
+      border-radius:12px;
+      background: linear-gradient(135deg,var(--accent),var(--accent-2));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:800;
+      color:#042135;
+      box-shadow: 0 6px 18px rgba(58,167,255,0.12), inset 0 -4px 12px rgba(255,255,255,0.06);
+      font-family: var(--mono);
+    }
+
+    .title {
+      line-height:1;
+    }
+    .title h1{font-size:18px;margin:0}
+    .title p{margin:0;color:var(--muted);font-size:13px}
+
+    .userbox{
+      display:flex;
+      gap:12px;
+      align-items:center;
+    }
+    .username{
+      background:var(--glass);
+      padding:8px 12px;
+      border-radius:999px;
+      color:var(--accent-2);
+      font-weight:600;
+      font-size:14px;
+    }
+    .btn {
+      background: linear-gradient(180deg, rgba(122,191,255,0.12), rgba(122,191,255,0.06));
+      border:1px solid rgba(122,191,255,0.08);
+      color:var(--accent-2);
+      padding:8px 12px;
+      border-radius:10px;
+      cursor:pointer;
+      font-weight:600;
+      font-size:14px;
+    }
+    .btn.ghost{
+      background:transparent;
+      border:1px solid rgba(255,255,255,0.04);
+      color:var(--muted);
+    }
+
+    main.grid{
+      display:grid;
+      grid-template-columns: 1fr 360px;
+      gap:18px;
+    }
+
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border:1px solid rgba(255,255,255,0.03);
+      border-radius: var(--radius);
+      padding:18px;
+      box-shadow: 0 8px 30px rgba(2,6,23,0.6);
+    }
+
+    .balance {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:12px;
+    }
+    .balance .left { display:flex; gap:10px; align-items:center }
+    .balance .label { color:var(--muted); font-size:13px }
+    .balance .amount { font-size:24px; font-weight:700; color:var(--accent-2) }
+
+    .controls { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:10px }
+    input[type="number"], select {
+      background: transparent;
+      border:1px solid rgba(255,255,255,0.04);
+      padding:10px 12px;
+      border-radius:10px;
+      color: #dff6ff;
+      min-width:110px;
+      font-size:14px;
+    }
+    label{font-size:13px;color:var(--muted)}
+
+    #betBtn{
+      padding:12px 16px;
+      border-radius:10px;
+      background: linear-gradient(90deg,var(--accent),var(--accent-2));
+      border:none;
+      color:#042135;
+      font-weight:700;
+      cursor:pointer;
+      box-shadow: 0 8px 20px rgba(58,167,255,0.12);
+    }
+    #resetBtn{ padding:10px 12px }
+
+    .muted{ color:var(--muted); font-size:13px }
+    .log { height:160px; overflow:auto; background: rgba(255,255,255,0.01); padding:10px; border-radius:10px; font-size:13px; color:var(--muted) }
+
+    .result {
+      margin-top:12px;
+      padding:12px;
+      border-radius:10px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.0));
+      border:1px solid rgba(255,255,255,0.02);
+      min-height:48px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-weight:700;
+      color:var(--accent-2);
+    }
+
+    /* win/lose visual feedback */
+    .flash-win {
+      animation: winPulse 1s ease;
+      box-shadow: 0 6px 30px rgba(122,219,255,0.12), 0 0 24px rgba(103,209,255,0.06) inset;
+      border:1px solid rgba(126,243,166,0.12);
+      color:var(--success);
+    }
+    .flash-lose {
+      animation: losePulse 0.8s ease;
+      box-shadow: 0 6px 22px rgba(255,90,90,0.06);
+      border:1px solid rgba(255,122,122,0.06);
+      color:var(--danger);
+    }
+    @keyframes winPulse {
+      0% { transform: translateY(0); }
+      40% { transform: translateY(-6px); }
+      100% { transform: translateY(0); }
+    }
+    @keyframes losePulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(0.995); }
+      100% { transform: scale(1); }
+    }
+
+    footer.small { margin-top:12px; color:var(--muted); font-size:12px; text-align:center }
+
+    /* modal for login */
+    .modal-backdrop{
+      position:fixed;
+      inset:0;
+      background: linear-gradient(180deg, rgba(2,6,23,0.75), rgba(2,6,23,0.85));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:50;
+    }
+    .modal{
+      width:100%;
+      max-width:420px;
+      padding:22px;
+      border-radius:14px;
+      background: linear-gradient(180deg, rgba(10,18,28,0.98), rgba(7,12,20,0.98));
+      border:1px solid rgba(58,167,255,0.06);
+      box-shadow: 0 20px 60px rgba(2,6,23,0.8);
+      text-align:center;
+    }
+    .modal h2{margin:0 0 8px 0}
+    .modal p{margin:0 0 14px 0; color:var(--muted)}
+    .modal input[type="text"]{
+      width:100%;
+      padding:12px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,0.04);
+      background:transparent;
+      color:#e6f2ff;
+      margin-bottom:12px;
+    }
+
+    .small-note{ font-size:12px; color:var(--muted) }
+
+    /* Responsive */
+    @media (max-width:900px){
+      main.grid{ grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="app-header">
+      <div class="brand">
+        <div class="logo">PBA</div>
+        <div class="title">
+          <h1>PlayBet Arena</h1>
+          <p>Simulator — koin virtual, belajar & hiburan</p>
+        </div>
+      </div>
+
+      <div class="userbox" id="userbox">
+        <div class="username" id="usernameDisplay">—</div>
+        <button class="btn ghost" id="logoutBtn" style="display:none">Logout</button>
+      </div>
+    </header>
+
+    <main class="grid">
+      <section class="card">
+        <div class="balance">
+          <div class="left">
+            <div>
+              <div class="label">Saldo</div>
+              <div class="amount" id="balance">1000</div>
+            </div>
+            <div style="margin-left:10px;color:var(--muted);font-size:13px">koin virtual</div>
+          </div>
+          <div style="text-align:right">
+            <div class="muted">Pengguna</div>
+            <div id="playerGreeting" style="font-weight:700; margin-top:6px">—</div>
+          </div>
+        </div>
+
+        <div style="margin-top:8px" class="controls">
+          <label>
+            Taruhan:
+            <input id="betAmount" type="number" min="1" value="50" />
+          </label>
+
+          <label>
+            Pilih:
+            <select id="choice">
+              <option value="odd">Ganjil (2x)</option>
+              <option value="even">Genap (2x)</option>
+              <option value="number">Tebak angka (10x)</option>
+            </select>
+          </label>
+
+          <label id="numberPickLabel" style="display:none">
+            Angka 0–9:
+            <input id="numberPick" type="number" min="0" max="9" value="7" />
+          </label>
+
+          <button id="betBtn">Pasang Taruhan</button>
+          <button id="resetBtn" class="btn ghost">Reset Saldo</button>
+        </div>
+
+        <div class="result" id="lastResult">Belum ada putaran</div>
+
+        <div style="margin-top:14px">
+          <div class="muted">Log permainan</div>
+          <div id="log" class="log"></div>
+        </div>
+
+        <footer class="small">Ingat: Ini **hanya** permainan koin virtual — tidak ada taruhan uang nyata.</footer>
+      </section>
+
+      <aside class="card">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div>
+            <div class="muted">Statistik singkat</div>
+            <div style="margin-top:8px;font-weight:700">
+              Menang: <span id="wins">0</span> · Kalah: <span id="losses">0</span>
+            </div>
+          </div>
+
+          <div>
+            <div class="muted">Kontrol akun</div>
+            <div style="margin-top:8px;display:flex;gap:8px">
+              <button id="changeUserBtn" class="btn ghost">Ganti Username</button>
+              <button id="clearDataBtn" class="btn ghost">Hapus Data Lokal</button>
+            </div>
+            <div class="small-note" style="margin-top:8px">Username & saldo disimpan di browser (localStorage).</div>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- Login modal (visible saat belum login) -->
+  <div id="loginModal" class="modal-backdrop" style="display:none">
+    <div class="modal">
+      <h2>Selamat datang di PlayBet Arena</h2>
+      <p>Masukkan username untuk mulai bermain (disimpan hanya di browser kamu).</p>
+      <input id="usernameInput" type="text" maxlength="30" placeholder="Contoh: Fajar123" />
+      <div style="display:flex;gap:8px;justify-content:center">
+        <button id="startBtn" class="btn">Mulai</button>
+        <button id="startGuestBtn" class="btn ghost">Main sebagai Guest</button>
+      </div>
+      <p class="small-note" style="margin-top:10px">Catatan: Ini hanyalah simulator tanpa uang nyata.</p>
+    </div>
+  </div>
+
+  <script>
+    // Keys
+    const KEY_USER = 'pba_username';
+    const KEY_BAL = 'pba_balance';
+    const KEY_STATS = 'pba_stats'; // {wins,losses}
+
+    // Elements
+    const loginModal = document.getElementById('loginModal');
+    const usernameInput = document.getElementById('usernameInput');
+    const startBtn = document.getElementById('startBtn');
+    const startGuestBtn = document.getElementById('startGuestBtn');
+    const usernameDisplay = document.getElementById('usernameDisplay');
+    const playerGreeting = document.getElementById('playerGreeting');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const changeUserBtn = document.getElementById('changeUserBtn');
+    const clearDataBtn = document.getElementById('clearDataBtn');
+
+    const balanceEl = document.getElementById('balance');
+    const betAmountEl = document.getElementById('betAmount');
+    const betBtn = document.getElementById('betBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const logEl = document.getElementById('log');
+    const lastResultEl = document.getElementById('lastResult');
+    const choiceEl = document.getElementById('choice');
+    const numberPickLabel = document.getElementById('numberPickLabel');
+    const numberPickEl = document.getElementById('numberPick');
+    const winsEl = document.getElementById('wins');
+    const lossesEl = document.getElementById('losses');
+
+    // State init
+    function safeParse(key, fallback){ try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch(e){ return fallback; } }
+
+    let username = localStorage.getItem(KEY_USER) || null;
+    let balance = Number(localStorage.getItem(KEY_BAL) || 1000);
+    let stats = safeParse(KEY_STATS, {wins:0, losses:0});
+
+    // UI update
+    function updateUI(){
+      balanceEl.textContent = balance;
+      usernameDisplay.textContent = username ? username : '—';
+      playerGreeting.textContent = username ? `Halo, ${username}` : 'Belum login';
+      logoutBtn.style.display = username ? 'inline-block' : 'none';
+      if (!username) showLogin();
+      winsEl.textContent = stats.wins;
+      lossesEl.textContent = stats.losses;
+      if (balance <= 0) betBtn.disabled = true;
+      else betBtn.disabled = false;
+    }
+
+    function saveState(){
+      if (username) localStorage.setItem(KEY_USER, username);
+      localStorage.setItem(KEY_BAL, String(balance));
+      localStorage.setItem(KEY_STATS, JSON.stringify(stats));
+    }
+
+    // Login modal handlers
+    function showLogin(){ loginModal.style.display = 'flex'; usernameInput.focus(); }
+    function hideLogin(){ loginModal.style.display = 'none'; }
+
+    startBtn.addEventListener('click', () => {
+      const v = usernameInput.value.trim();
+      if (!v) { alert('Masukkan username (minimal 1 karakter).'); usernameInput.focus(); return; }
+      username = v;
+      saveState();
+      hideLogin();
+      addLog(`User "${username}" masuk. Saldo: ${balance} koin.`);
+      updateUI();
+    });
+
+    startGuestBtn.addEventListener('click', () => {
+      username = 'Guest';
+      saveState();
+      hideLogin();
+      addLog('Main sebagai Guest.');
+      updateUI();
+    });
+
+    logoutBtn.addEventListener('click', () => {
+      if (!confirm('Keluar dari akun? Username akan dihapus dari browser.')) return;
+      localStorage.removeItem(KEY_USER);
+      username = null;
+      updateUI();
+      addLog('Pengguna logout.');
+    });
+
+    changeUserBtn.addEventListener('click', () => {
+      if (confirm('Ganti username? (ini akan membuka dialog login)')) {
+        localStorage.removeItem(KEY_USER);
+        username = null;
+        updateUI();
+      }
+    });
+
+    clearDataBtn.addEventListener('click', () => {
+      if (!confirm('Hapus semua data lokal (username, saldo, statistik)?')) return;
+      localStorage.removeItem(KEY_USER);
+      localStorage.removeItem(KEY_BAL);
+      localStorage.removeItem(KEY_STATS);
+      username = null;
+      balance = 1000;
+      stats = {wins:0, losses:0};
+      updateUI();
+      addLog('Semua data lokal dihapus.');
+    });
+
+    // Game logic (same mechanics as demo)
+    choiceEl.addEventListener('change', () => {
+      numberPickLabel.style.display = choiceEl.value === 'number' ? 'inline-block' : 'none';
+    });
+
+    function addLog(text){
+      const time = new Date().toLocaleTimeString();
+      logEl.innerHTML = `<div>[${time}] ${escapeHtml(text)}</div>` + logEl.innerHTML;
+    }
+
+    function escapeHtml(s){
+      return String(s).replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]; });
+    }
+
+    betBtn.addEventListener('click', () => {
+      if (!username) { showLogin(); return; }
+      const bet = Math.floor(Number(betAmountEl.value));
+      if (!bet || bet <= 0) { alert('Masukkan jumlah taruhan yang valid.'); return; }
+      if (bet > balance) { alert('Saldo tidak cukup.'); return; }
+
+      const outcome = Math.floor(Math.random() * 10);
+      let win = false;
+      let payout = 0;
+
+      if (choiceEl.value === 'odd') {
+        win = outcome % 2 === 1;
+        payout = win ? bet * 2 : 0;
+      } else if (choiceEl.value === 'even') {
+        win = outcome % 2 === 0;
+        payout = win ? bet * 2 : 0;
+      } else {
+        const pick = Number(numberPickEl.value);
+        win = pick === outcome;
+        payout = win ? bet * 10 : 0;
+      }
+
+      balance = balance - bet + payout;
+      if (win) stats.wins += 1; else stats.losses += 1;
+      saveState();
+      updateUI();
+
+      const resultText = `Angka: ${outcome}. ${win ? 'MENANG' : 'KALAH'}. Taruhan ${bet} → ${payout} koin. Saldo sekarang ${balance}.`;
+      lastResultEl.textContent = resultText;
+      // add visual flash
+      lastResultEl.classList.remove('flash-win','flash-lose');
+      void lastResultEl.offsetWidth; // reflow to restart animation
+      lastResultEl.classList.add(win ? 'flash-win' : 'flash-lose');
+
+      addLog(resultText);
+    });
+
+    resetBtn.addEventListener('click', () => {
+      if (!confirm('Reset saldo ke 1000 koin?')) return;
+      balance = 1000;
+      saveState();
+      updateUI();
+      addLog('Saldo direset ke 1000.');
+      lastResultEl.textContent = '—';
+    });
+
+    // First load
+    updateUI();
+    if (!username) showLogin();
+    else addLog(`Selamat datang kembali, ${username}. Saldo: ${balance} koin.`);
+  </script>
+</body>
+</html>
